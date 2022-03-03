@@ -37,27 +37,34 @@ namespace pepperl_fuchs {
 R2000Node::R2000Node():nh_("~")
 {
     driver_ = 0;
-    // Reading and checking parameters
+    // Reading parameters
     //-------------------------------------------------------------------------
     nh_.param("frame_id", frame_id_, std::string("/scan"));
     nh_.param("scanner_ip",scanner_ip_,std::string(""));
     nh_.param("scan_frequency",scan_frequency_,35);
     nh_.param("samples_per_scan",samples_per_scan_,3600);
+}
 
+//-----------------------------------------------------------------------------
+bool R2000Node::start()
+{
+    // Checking parameters
+    //-------------------------------------------------------------------------
     if( scanner_ip_ == "" )
     {
         std::cerr << "IP of laser range finder not set!" << std::endl;
-        return;
+        return false;
     }
 
     if( !connect() )
-        return;
+        return false;
 
     // Declare publisher and create timer
     //-------------------------------------------------------------------------
     scan_publisher_ = nh_.advertise<sensor_msgs::LaserScan>("scan",100);
     cmd_subscriber_ = nh_.subscribe("control_command",100,&R2000Node::cmdMsgCallback,this);
     get_scan_data_timer_ = nh_.createTimer(ros::Duration(1/(2*std::atof(driver_->getParametersCached().at("scan_frequency").c_str()))), &R2000Node::getScanData, this);
+    return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -181,7 +188,11 @@ void R2000Node::cmdMsgCallback(const std_msgs::StringConstPtr &msg)
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "r2000_node", ros::init_options::AnonymousName);
-    new pepperl_fuchs::R2000Node();
+    pepperl_fuchs::R2000Node node;
+    if( !node.start() )
+    {
+        return 1;
+    }
     ros::spin();
     return 0;
 }

@@ -41,13 +41,15 @@ class R2000Driver;
 class R2000Node
 {
 public:
-    //! Initialize and connect to laser range finder
     R2000Node();
 
+    //! Initialize and connect to laser range finder
+    bool start();
+
+private:
     //! Callback function for control commands
     void cmdMsgCallback( const std_msgs::StringConstPtr& msg );
 
-private:
     //! Connect to the laser range finder
     //! @returns True on success, false otherwise
     bool connect();
